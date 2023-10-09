@@ -1,0 +1,1 @@
+Arrumar bug em que o programa fica "não respondendo" ao fazer o downlioad. Possivelmente tem a ver com o uso de threads (pra fazer o download ou para mostrar a progressão?)
