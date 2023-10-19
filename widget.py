@@ -1,3 +1,6 @@
+import sys
+from time import sleep
+
 from PySide6.QtWidgets import QWidget, QMessageBox
 from QtDesigner.ui_widget import Ui_Widget
 from pytube import YouTube
@@ -5,35 +8,36 @@ import os
 from pytube.exceptions import VideoUnavailable
 from threading import Thread
 
+
 class Widget(QWidget, Ui_Widget):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.barraProgresso.setValue(0)
-        self.barraProgresso.setVisible(False)
         self.btnDownload.clicked.connect(self.download)
+        self.label_2.setVisible(False)
+        self.txtInformativo.setVisible(False)
+        sys.stdout = self
+        self.original_stdout = sys.__stdout__
 
-    def mostrar_progresso(self, stream, chunk, bytes_remaining):
-        self.barraProgresso.setVisible(True)
-        self.barraProgresso.setTextVisible(True)
-        total_size = stream.filesize
-        bytes_downloaded = total_size - bytes_remaining
-        progress = (bytes_downloaded / total_size) * 100
-        self.barraProgresso.setValue(progress)
+    def write(self, texto):
+        self.txtInformativo.insertPlainText(texto)
 
     def download(self):
-        if self.radioBtnMp3.isChecked():
-            formato = '.mp3'
-        elif self.radioBtnMp4.isChecked():
-            formato = '.mp4'
-        else:
-            QMessageBox.information(self, 'Info',
-                                     f'Formato não selecionado',
-                                     QMessageBox.Ok | QMessageBox.Cancel)
-
+        self.label_2.setVisible(True)
+        self.txtInformativo.setVisible(True)
         try:
+            if self.radioBtnMp3.isChecked():
+                formato = '.mp3'
+            elif self.radioBtnMp4.isChecked():
+                formato = '.mp4'
+            else:
+                QMessageBox.information(self, 'Info',
+                                         f'Formato não selecionado',
+                                         QMessageBox.Ok | QMessageBox.Cancel)
+                return
+
             link = self.txtUrl.text()
-            yt = YouTube(link, on_progress_callback=self.mostrar_progresso)
+            yt = YouTube(link)
             titulo_do_video = yt.title
 
             if formato == '.mp3':
@@ -50,7 +54,6 @@ class Widget(QWidget, Ui_Widget):
                 print(f'Qualidade: {stream.resolution} | {stream.fps}fps')
                 stream.download()
 
-
         except FileExistsError:
             print('O arquivo já existe no diretório, portanto não foi baixado.')
 
@@ -59,9 +62,9 @@ class Widget(QWidget, Ui_Widget):
                                  'O vídeo que você está tentando baixar não está disponível!',
                                  QMessageBox.Ok | QMessageBox.Cancel)
 
-        except:
-            QMessageBox.warning(self, 'Atenção!',
-                                'Ocorreu algum erro!',
+        except Exception as erro:
+            QMessageBox.warning(self, 'Erro!',
+                                f'{erro}!',
                                 QMessageBox.Ok | QMessageBox.Cancel)
 
         else:
@@ -69,7 +72,6 @@ class Widget(QWidget, Ui_Widget):
                 qualidade = video.abr
             else:
                 qualidade = f'{stream.resolution} | {stream.fps}'
-            QMessageBox.information(self, 'Info',
-                                    f'Arquivo baixado com êxito!\n'
-                                    f'Qualidade: {qualidade}',
+            QMessageBox.information(self, 'Mensagem de informação',
+                                    f'Arquivo baixado com êxito!\nQualidade: {qualidade}',
                                     QMessageBox.Ok | QMessageBox.Cancel)
